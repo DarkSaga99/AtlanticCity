@@ -19,9 +19,11 @@ namespace AtlanticCity.Workers.Notifications
     {
         static async Task Main(string[] args)
         {
+            var env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Development";
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables()
                 .Build();
 

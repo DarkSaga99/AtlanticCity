@@ -6,6 +6,9 @@
 *.sln.docstates
 .vs/
 .vscode/
+appsettings.Development.json
+appsettings.*.json
+!appsettings.json
 
 # Node.js
 src/Frontend/atlantic-city-client/node_modules/

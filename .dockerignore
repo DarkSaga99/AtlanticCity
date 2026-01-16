@@ -1,0 +1,16 @@
+**/.git
+**/.gitignore
+**/bin
+**/obj
+**/out
+**/.vs
+**/.vscode
+**/.idea
+**/node_modules
+**/dist
+**/publish
+**/appsettings.Development.json
+**/Dockerfile
+**/docker-compose*
+**/*.db
+**/*.db-journal

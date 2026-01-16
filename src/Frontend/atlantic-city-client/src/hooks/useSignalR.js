@@ -28,7 +28,7 @@ export function useSignalR(isAuthenticated, onRefresh) {
                 }
                 
                 // Mensaje final
-                if (mensaje.esCompleto === true) {
+                if (mensaje.esCompleto === true || mensaje.EsCompleto === true) {
                     const batchId = mensaje.idMensaje || mensaje.IdMensaje;
                     
                     setProgresoLotes(prev => {
@@ -37,16 +37,16 @@ export function useSignalR(isAuthenticated, onRefresh) {
                         return newState;
                     });
                     
-                    if (mensaje.esRechazado) {
+                    if (mensaje.esRechazado || mensaje.EsRechazado) {
                         setNotificacion({
                             titulo: "Carga Rechazada",
-                            texto: mensaje.motivoRechazo,
+                            texto: mensaje.motivoRechazo || mensaje.MotivoRechazo,
                             tipo: "error"
                         });
                     } else {
                         setNotificacion({
                             titulo: "Procesamiento Finalizado",
-                            texto: `El archivo '${mensaje.nombreArchivo}' se procesó exitosamente.`,
+                            texto: `El archivo '${mensaje.nombreArchivo || mensaje.NombreArchivo}' se procesó exitosamente.`,
                             tipo: "success"
                         });
                     }

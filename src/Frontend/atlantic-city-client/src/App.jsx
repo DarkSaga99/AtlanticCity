@@ -107,6 +107,7 @@ function App() {
                     onLogin={auth.login}
                     onRegister={auth.register}
                     setError={auth.setError}
+                    setNotification={setNotificacionManual}
                 />
                 <Toast notificacion={notificacionActiva} onClose={cerrarNotificacion} />
             </>

@@ -13,7 +13,8 @@ export function LoginScreen({
     setIsLogin, 
     onLogin, 
     onRegister,
-    setError 
+    setError,
+    setNotification 
 }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -22,6 +23,11 @@ export function LoginScreen({
         } else {
             const result = await onRegister(username, email, password);
             if (result.success) {
+                setNotification({
+                    titulo: "Cuenta Creada",
+                    texto: "Usuario registrado exitosamente. Ya puedes iniciar sesión.",
+                    tipo: "success"
+                });
                 setIsLogin(true);
                 setEmail('');
             }

@@ -1,0 +1,30 @@
+# .NET
+[Bb]in/
+[Oo]bj/
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+
+# Node.js
+src/Frontend/atlantic-city-client/node_modules/
+src/Frontend/atlantic-city-client/dist/
+src/Frontend/atlantic-city-client/.env.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs & Temp
+*.log
+identity_logs.txt
+temp/

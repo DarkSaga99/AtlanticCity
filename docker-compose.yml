@@ -1,0 +1,126 @@
+version: '3.8'
+
+services:
+  # 1. Base de Datos (SQL Server)
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: ac-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStrong@Password
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql_data:/var/opt/mssql
+
+  # 2. Mensajería (RabbitMQ)
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: ac-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+
+  # 3. Almacenamiento (SeaweedFS)
+  seaweedfs:
+    image: chrislusf/seaweedfs
+    container_name: ac-seaweedfs
+    ports:
+      - "8888:8888"
+      - "9333:9333"
+      - "8080:8080"
+    command: "server -s3"
+
+  # 4. Gateway (API Principal)
+  gateway:
+    build:
+      context: .
+      dockerfile: src/Backend/AtlanticCity.Gateway/Dockerfile
+    container_name: ac-gateway
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - RabbitMQ__HostName=ac-rabbitmq
+      - ConnectionStrings__DefaultConnection=Server=ac-sqlserver,1433;Database=AtlanticCityDB;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True;
+      - ReverseProxy__Clusters__cluster_identidad__Destinations__dest1__Address=http://ac-identity:8080
+      - ReverseProxy__Clusters__cluster_procesamiento__Destinations__dest2__Address=http://ac-processing:8080
+      - AllowedOrigins__0=http://localhost:5174
+      - Initializer__Run=true
+    depends_on:
+      - sqlserver
+      - rabbitmq
+
+  # 5. Servicio Identity (Auth)
+  identity:
+    build:
+      context: .
+      dockerfile: src/Backend/AtlanticCity.Services.Identity/Dockerfile
+    container_name: ac-identity
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ConnectionStrings__DefaultConnection=Server=ac-sqlserver,1433;Database=AtlanticCityDB;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True;
+    depends_on:
+      - sqlserver
+
+  # 6. Servicio Procesamiento (Lógica de Negocio)
+  processing:
+    build:
+      context: .
+      dockerfile: src/Backend/AtlanticCity.Services.Processing/Dockerfile
+    container_name: ac-processing
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ConnectionStrings__DefaultConnection=Server=ac-sqlserver,1433;Database=AtlanticCityDB;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True;
+      - RabbitMQ__HostName=ac-rabbitmq
+      - SeaweedFS__FilerUrl=http://ac-seaweedfs:8888/cargas/
+      - AllowedOrigins__0=http://localhost:5174
+    depends_on:
+      - sqlserver
+      - rabbitmq
+      - seaweedfs
+
+  # 7. Worker Carga Masiva (Procesamiento CSV)
+  worker-bulkload:
+    build:
+      context: .
+      dockerfile: src/Backend/AtlanticCity.Workers.BulkLoad/Dockerfile
+    container_name: ac-worker-bulkload
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=ac-sqlserver,1433;Database=AtlanticCityDB;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True;
+      - RabbitMQ__HostName=ac-rabbitmq
+    depends_on:
+      - rabbitmq
+
+  # 8. Worker Notificaciones (Email)
+  worker-notifications:
+    build:
+      context: .
+      dockerfile: src/Backend/AtlanticCity.Workers.Notifications/Dockerfile
+    container_name: ac-worker-notifications
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=ac-sqlserver,1433;Database=AtlanticCityDB;User Id=sa;Password=YourStrong@Password;TrustServerCertificate=True;
+      - RabbitMQ__HostName=ac-rabbitmq
+    depends_on:
+      - rabbitmq
+
+  # 9. Frontend (React)
+  frontend:
+    build:
+      context: src/Frontend/atlantic-city-client
+      dockerfile: Dockerfile
+    container_name: ac-frontend
+    ports:
+      - "5174:80"
+    depends_on:
+      - gateway
+
+
+volumes:
+  sql_data:

@@ -32,11 +32,11 @@ namespace AtlanticCity.Services.Processing.Application.Handlers
         public async Task<Guid> Handle(SubirArchivoCommand request, CancellationToken cancellationToken)
         {
             if (request.Archivo == null || request.Archivo.Length == 0)
-                throw new ArgumentException("File is required");
+                throw new ArgumentException("El archivo es requerido");
 
             var extension = System.IO.Path.GetExtension(request.Archivo.FileName)?.ToLowerInvariant();
             if (string.IsNullOrEmpty(extension) || (extension != ".csv" && extension != ".xlsx"))
-                throw new ArgumentException("Invalid format. Only .csv and .xlsx are allowed");
+                throw new ArgumentException("Formato inválido. Solo se admiten archivos .csv y .xlsx");
 
             var batchId = Guid.NewGuid();
 
@@ -61,10 +61,10 @@ namespace AtlanticCity.Services.Processing.Application.Handlers
             try
             {
                 await _auditoria.RegistrarAsync(
-                    "Upload Started", 
+                    "Carga Iniciada", 
                     "ProcessBatches", 
                     request.CorreoUsuario, 
-                    $"Started processing '{request.Archivo.FileName}'"
+                    $"Se inició el procesamiento de '{request.Archivo.FileName}'"
                 );
             }
             catch (Exception)

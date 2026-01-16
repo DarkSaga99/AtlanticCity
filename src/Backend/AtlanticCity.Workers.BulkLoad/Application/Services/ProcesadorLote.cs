@@ -81,7 +81,7 @@ namespace AtlanticCity.Workers.BulkLoad.Application.Services
                         if (string.IsNullOrEmpty(row.Codigo) || string.IsNullOrEmpty(row.Nombre))
                         {
                             errors++;
-                            await _repoLotes.RegistrarAuditoriaAsync("Invalid Row", $"Row {row.NumeroFila} is incomplete.", mensaje.CorreoUsuario, mensaje.IdMensaje);
+                            await _repoLotes.RegistrarAuditoriaAsync("Fila Inválida", $"La fila {row.NumeroFila} está incompleta.", mensaje.CorreoUsuario, mensaje.IdMensaje);
                         }
                         else
                         {

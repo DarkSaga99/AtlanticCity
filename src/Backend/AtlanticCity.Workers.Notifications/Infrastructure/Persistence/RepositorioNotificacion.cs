@@ -40,10 +40,10 @@ namespace AtlanticCity.Workers.Notifications.Infrastructure.Persistence
 
                 _context.Logs.Add(new LogAuditoria
                 {
-                    Action = "Notification Sent",
+                    Action = "Notificación Enviada",
                     TableName = "ProcessBatches",
                     UserId = usuario,
-                    Details = $"Confirmation email sent for '{nombreArchivo}'",
+                    Details = $"Correo de confirmación enviado para '{nombreArchivo}'",
                     Timestamp = DateTime.Now
                 });
 

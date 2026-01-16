@@ -53,8 +53,8 @@ namespace AtlanticCity.Workers.Notifications
 
                     await repo.FinalizarNotificacionAsync(mensaje.IdMensaje, mensaje.CorreoUsuario, mensaje.NombreArchivo);
 
-                    string body = $"The file '{mensaje.NombreArchivo}' has been processed successfully.";
-                    await emailService.EnviarCorreoAsync(mensaje.CorreoUsuario, "Bulk Load Completed", body);
+                    string body = $"El archivo '{mensaje.NombreArchivo}' se ha procesado correctamente.";
+                    await emailService.EnviarCorreoAsync(mensaje.CorreoUsuario, "Carga masiva completada", body);
 
                     log.LogInformation($"Batch {mensaje.IdMensaje} finalized and email sent.");
                     

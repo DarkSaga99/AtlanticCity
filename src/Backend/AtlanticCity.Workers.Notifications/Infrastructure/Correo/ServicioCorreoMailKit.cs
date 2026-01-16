@@ -31,7 +31,7 @@ namespace AtlanticCity.Workers.Notifications.Infrastructure.Correo
             }
 
             var email = new MimeMessage();
-            email.From.Add(new MailboxAddress("Atlantic City System", senderEmail));
+            email.From.Add(new MailboxAddress("Sistema Atlantic City", senderEmail));
             email.To.Add(MailboxAddress.Parse(destinatario));
             email.Subject = asunto;
             email.Body = new TextPart("plain") { Text = cuerpo };

@@ -9,8 +9,7 @@ using AtlanticCity.Servicios.Identidad.Core.Interfaces;
 
 namespace AtlanticCity.Servicios.Identidad.Aplicacion.Handlers
 {
-    // HANDLER: Orquestador del proceso de Login.
-    // Aquí vive la lógica de orquestación, desacoplada del controlador.
+    // Handles user authentication and login orchestration
     public class LoginHandler : IRequestHandler<LoginCommand, TokenDto?>
     {
         private readonly IUsuarioRepositorio _repositorio;
@@ -35,7 +34,7 @@ namespace AtlanticCity.Servicios.Identidad.Aplicacion.Handlers
             var claims = new[] 
             { 
                 new Claim(ClaimTypes.Name, usuario.NombreUsuario),
-                new Claim(ClaimTypes.Role, usuario.Role) // <--- REQUERIMIENTO SENIOR: ROLES
+                new Claim(ClaimTypes.Role, usuario.Role)
             };
             var accessToken = _servicioToken.GenerarTokenAcceso(claims);
             var refreshToken = _servicioToken.GenerarTokenRefresco();

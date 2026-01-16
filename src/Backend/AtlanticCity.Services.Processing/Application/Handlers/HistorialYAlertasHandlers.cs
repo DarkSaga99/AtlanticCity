@@ -8,8 +8,7 @@ using AtlanticCity.Servicios.Procesamiento.Core.Interfaces;
 
 namespace AtlanticCity.Services.Processing.Application.Handlers
 {
-    // HANDLER: Consulta de historial de lotes procesados
-    // Refactorizado para usar IRepositorioLote (Clean Architecture)
+    // Handles batch history queries
     public class GetHistorialHandler : IRequestHandler<GetHistorialQuery, IEnumerable<HistorialDto>>
     {
         private readonly ILoteConsultas _consultas;

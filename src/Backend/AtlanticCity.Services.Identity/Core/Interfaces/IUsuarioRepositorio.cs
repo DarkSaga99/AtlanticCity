@@ -3,8 +3,7 @@ using AtlanticCity.Servicios.Identidad.Core.Entidades;
 
 namespace AtlanticCity.Servicios.Identidad.Core.Interfaces
 {
-    // REPOSITORIO: Puerto de salida para persistencia.
-    // Sigue DIP (Dependency Inversion Principle) de Clean Architecture.
+   
     public interface IUsuarioRepositorio
     {
         Task<Usuario?> ObtenerPorNombreUsuarioAsync(string nombreUsuario);

@@ -3,19 +3,17 @@ using AtlanticCity.Servicios.Identidad.Core.Entidades;
 
 namespace AtlanticCity.Servicios.Identidad.Infraestructura.Persistencia
 {
-    // Clase puente entre nuestro código C# y la base de datos SQL Server
     public class ContextoBaseDatos : DbContext
     {
         public ContextoBaseDatos(DbContextOptions<ContextoBaseDatos> opciones) : base(opciones) { }
 
-        // Mapea la clase Usuario a la tabla "Usuarios"
         public DbSet<Usuario> Usuarios { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder constructorModelos)
         {
             base.OnModelCreating(constructorModelos);
 
-            // Mapeamos a la tabla "Users" y renombramos columnas para que coincidan con el SQL existente
+            // Fluent API Mapping
             constructorModelos.Entity<Usuario>(entity =>
             {
                 entity.ToTable("Users");

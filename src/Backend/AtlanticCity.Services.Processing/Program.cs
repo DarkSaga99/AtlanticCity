@@ -12,7 +12,7 @@ using AtlanticCity.Compartido.Persistencia;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. INYECCIÓN DE DEPENDENCIAS (CLEAN ARCHITECTURE)
+// Dependency injection configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
 builder.Services.AddDbContext<ProcesamientoDbContext>(options =>
     options.UseSqlServer(connectionString, x => x.MigrationsHistoryTable("__ProcessingMigrationsHistory")));
@@ -66,7 +66,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// 2. MIGRACIÓN AUTOMÁTICA
+// Database initialization
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -75,13 +75,11 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<ProcesamientoDbContext>();
         await context.Database.MigrateAsync();
-        
-        // Cargar SPs (Opcional, si este servicio los necesita instalar)
         await InicializadorBaseDatos.InicializarAsync(connectionString, log);
     }
     catch (Exception ex)
     {
-        log.LogError($"Error inicializando DB en Processing: {ex.Message}");
+        log.LogError(ex, "DB Initialization error in Processing");
     }
 }
 
@@ -93,7 +91,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseRateLimiter();
 app.UseCors("AllowReact");
-app.UseMiddleware<ExceptionMiddleware>(); // Middleware Global de Errores
+app.UseMiddleware<ExceptionMiddleware>(); // Global error handling
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");

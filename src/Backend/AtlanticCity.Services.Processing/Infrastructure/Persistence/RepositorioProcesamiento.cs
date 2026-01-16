@@ -10,8 +10,7 @@ using AtlanticCity.Services.Processing.Infrastructure.Persistence;
 
 namespace AtlanticCity.Servicios.Procesamiento.Infraestructura.Persistencia
 {
-    // SOLID: ISP - Implementamos interfaces segregadas para comandos y consultas.
-    // Aunque la implementación física sea la misma clase, los clientes solo ven lo que necesitan.
+    // Implements segregated interfaces for commands and queries.
     public class RepositorioProcesamiento : IRepositorioLote, IAuditoriaRepositorio, ILoteConsultas
     {
         private readonly ProcesamientoDbContext _context;

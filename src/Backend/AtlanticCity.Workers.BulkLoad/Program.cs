@@ -40,7 +40,7 @@ namespace AtlanticCity.Workers.BulkLoad
             var log = services.GetRequiredService<ILogger<Program>>();
             var rabbit = services.GetRequiredService<IServicioMensajeria>();
 
-            log.LogInformation("--- Worker de Carga Masiva Iniciado ---");
+            log.LogInformation("BulkLoad Worker Started");
 
             await rabbit.SuscribirseAsync<MensajeProcesamientoArchivo>("cola_procesamiento_archivos", async (mensaje) =>
             {

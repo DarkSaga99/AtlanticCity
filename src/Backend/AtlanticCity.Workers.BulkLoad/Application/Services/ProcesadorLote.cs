@@ -40,72 +40,65 @@ namespace AtlanticCity.Workers.BulkLoad.Application.Services
             {
                 if (mensaje == null || string.IsNullOrEmpty(mensaje.UrlArchivo)) return;
 
-                _log.LogInformation($"[PROCESANDO] Lote: {mensaje.IdMensaje} - Archivo: {mensaje.NombreArchivo}");
+                _log.LogInformation($"Processing Batch: {mensaje.IdMensaje} - File: {mensaje.NombreArchivo}");
 
-                // 1. Notificar inicio
                 await _repoLotes.ActualizarEstadoAsync(mensaje.IdMensaje, "EN PROCESO");
 
-                // 2. Descargar archivo (Responsabilidad delegada)
                 using var networkStream = await _descargador.DescargarArchivoAsync(mensaje.UrlArchivo);
                 
-                // 3. Crear stream buscable (MemoryStream) para el parseador
                 using var stream = new MemoryStream();
                 await networkStream.CopyToAsync(stream);
                 stream.Position = 0;
                 
-                // 4. LEER TODAS LAS FILAS UNA SOLA VEZ (materializamos en lista)
-                var todasLasFilas = new System.Collections.Generic.List<FilaArchivo>();
-                foreach (var fila in _parseador.LeerFilas(stream, mensaje.NombreArchivo!))
+                var rows = new System.Collections.Generic.List<FilaArchivo>();
+                foreach (var row in _parseador.LeerFilas(stream, mensaje.NombreArchivo!))
                 {
-                    todasLasFilas.Add(fila);
+                    rows.Add(row);
                 }
                 
-                int totalFilas = todasLasFilas.Count;
-                mensaje.TotalRegistros = totalFilas;
-                _log.LogInformation($"[CONTEO] Lote {mensaje.IdMensaje}: {totalFilas} filas detectadas");
+                int totalRows = rows.Count;
+                mensaje.TotalRegistros = totalRows;
+                _log.LogInformation($"Batch {mensaje.IdMensaje}: {totalRows} rows detected");
                 
-                // 5. Procesar filas desde la lista (no desde el stream)
-                int success = 0, errors = 0, filaActual = 0;
-                var periodosValidados = new System.Collections.Generic.HashSet<string>();
+                int success = 0, errors = 0, currentIndex = 0;
+                var validatedPeriods = new System.Collections.Generic.HashSet<string>();
 
-                foreach (var fila in todasLasFilas)
+                foreach (var row in rows)
                 {
-                    filaActual++;
+                    currentIndex++;
                     try
                     {
-                        // Validación de Periodos
-                        if (!string.IsNullOrEmpty(fila.Periodo) && !periodosValidados.Contains(fila.Periodo))
+                        if (!string.IsNullOrEmpty(row.Periodo) && !validatedPeriods.Contains(row.Periodo))
                         {
-                            if (!await _repoLotes.IntentarBloquearPeriodoAsync(mensaje.IdMensaje, fila.Periodo))
+                            if (!await _repoLotes.IntentarBloquearPeriodoAsync(mensaje.IdMensaje, row.Periodo))
                             {
-                                await RechazarLoteAsync(mensaje, fila.Periodo);
+                                await RechazarLoteAsync(mensaje, row.Periodo);
                                 return;
                             }
-                            periodosValidados.Add(fila.Periodo);
+                            validatedPeriods.Add(row.Periodo);
                         }
 
-                        if (string.IsNullOrEmpty(fila.Codigo) || string.IsNullOrEmpty(fila.Nombre))
+                        if (string.IsNullOrEmpty(row.Codigo) || string.IsNullOrEmpty(row.Nombre))
                         {
                             errors++;
-                            await _repoLotes.RegistrarAuditoriaAsync("Error de Fila", $"Fila {fila.NumeroFila} inválida.", mensaje.CorreoUsuario, mensaje.IdMensaje);
+                            await _repoLotes.RegistrarAuditoriaAsync("Invalid Row", $"Row {row.NumeroFila} is incomplete.", mensaje.CorreoUsuario, mensaje.IdMensaje);
                         }
                         else
                         {
-                            await _repoProductos.ProcesarProductoAsync(mensaje.IdMensaje, fila.Codigo, fila.Nombre, fila.Periodo ?? "N/A");
+                            await _repoProductos.ProcesarProductoAsync(mensaje.IdMensaje, row.Codigo, row.Nombre, row.Periodo ?? "N/A");
                             success++;
                         }
                     }
                     catch (Exception) { errors++; }
 
-                    // Notificar progreso cada 50 registros CON EL TOTAL
-                    if (filaActual % 50 == 0) await NotificarProgresoAsync(mensaje, totalFilas, filaActual);
+                    if (currentIndex % 50 == 0) await NotificarProgresoAsync(mensaje, totalRows, currentIndex);
                 }
 
-                await FinalizarLoteAsync(mensaje, filaActual, success, errors);
+                await FinalizarLoteAsync(mensaje, currentIndex, success, errors);
             }
             catch (Exception ex)
             {
-                _log.LogError($"[ERROR LOTE] {mensaje.IdMensaje}: {ex.Message}");
+                _log.LogError($"Batch processing error {mensaje.IdMensaje}: {ex.Message}");
                 await _repoLotes.ActualizarEstadoAsync(mensaje.IdMensaje, "Error");
             }
         }

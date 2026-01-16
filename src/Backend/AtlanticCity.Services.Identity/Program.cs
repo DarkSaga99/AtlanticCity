@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. CONFIGURACIÓN DE SERVICIOS (CLEAN ARCHITECTURE)
+// Service configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
 
 // Inyección de Dependencias
@@ -17,7 +17,7 @@ builder.Services.AddDbContext<ContextoBaseDatos>(options =>
 builder.Services.AddSingleton<IServicioToken, ServicioToken>(); 
 builder.Services.AddScoped<IUsuarioRepositorio, RepositorioUsuario>();
 
-// Registro de MediatR para CQRS (Escanea el ensamblado actual para encontrar Handlers)
+// Register MediatR handlers
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
 builder.Services.AddControllers();
@@ -26,27 +26,24 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// 2. MIGRACIÓN AUTOMÁTICA Y CARGA DE SPS
+// Database initialization
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var log = services.GetRequiredService<ILogger<Program>>();
     try
     {
-        // Aplicar Migraciones de EF Core (Tablas)
         var context = services.GetRequiredService<ContextoBaseDatos>();
         await context.Database.MigrateAsync();
-        
-        // Cargar SPs y Auditoría (Lógica que EF Core no maneja nativamente)
         await InicializadorBaseDatos.InicializarAsync(connectionString, log);
     }
     catch (Exception ex)
     {
-        log.LogError($"Error inicializando DB: {ex.Message}");
+        log.LogError(ex, "DB Initialization Error");
     }
 }
 
-// 3. MIDDLEWARES
+// Middleware configuration
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

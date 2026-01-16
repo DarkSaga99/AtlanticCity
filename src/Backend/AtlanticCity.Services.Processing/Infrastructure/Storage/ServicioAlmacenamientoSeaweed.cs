@@ -26,28 +26,26 @@ namespace AtlanticCity.Servicios.Procesamiento.Infraestructura.Storage
         {
             try
             {
-                // Limpiamos el nombre del archivo para evitar problemas en la URL
-                string nombreLimpio = $"{Guid.NewGuid()}_{nombreArchivo}";
-                var urlFinal = $"{_urlFiler}{nombreLimpio}";
+                string fileName = $"{Guid.NewGuid()}_{nombreArchivo}";
+                var url = $"{_urlFiler}{fileName}";
 
-                // 2. Preparar y enviar archivo directamente al FILER
-                using var contenido = new MultipartFormDataContent();
-                var contenidoArchivo = new StreamContent(flujoArchivo);
-                contenido.Add(contenidoArchivo, "file", nombreLimpio);
+                using var content = new MultipartFormDataContent();
+                var fileContent = new StreamContent(flujoArchivo);
+                content.Add(fileContent, "file", fileName);
 
-                var respuesta = await _clienteHttp.PostAsync(urlFinal, contenido);
+                var response = await _clienteHttp.PostAsync(url, content);
 
-                if (respuesta.IsSuccessStatusCode)
+                if (response.IsSuccessStatusCode)
                 {
-                    _log.LogInformation($"[STORAGE] Archivo guardado en Filer: {urlFinal}");
-                    return urlFinal;
+                    _log.LogInformation($"[Storage] File stored: {url}");
+                    return url;
                 }
 
-                throw new Exception($"Error SeaweedFS Filer: {respuesta.StatusCode} - {respuesta.ReasonPhrase}");
+                throw new Exception($"Error SeaweedFS Filer: {response.StatusCode} - {response.ReasonPhrase}");
             }
             catch (Exception ex)
             {
-                _log.LogError($"[ERROR STORAGE] Fallo crítico al subir archivo a SeaweedFS: {ex.Message}");
+                _log.LogError($"[Storage Error] SeaweedFS upload fail: {ex.Message}");
                 throw;
             }
         }

@@ -1,21 +1,20 @@
 @echo off
 echo =========================================
-echo   ATLANTIC CITY - INICIANDO DOCKER
+echo   Atlantic City - Docker Environment
 echo =========================================
 
-echo [1/3] Deteniendo contenedores anteriores...
+echo Stopping existing containers...
 docker-compose down
 
-echo [2/3] Construyendo e iniciando servicios...
-echo       (Esto puede tardar unos minutos la primera vez)
+echo Building and starting services...
 docker-compose up --build -d
 
-echo [3/3] Esperando a que el sistema este listo...
+echo Waiting for system to be ready...
 timeout /t 10
 
 echo.
 echo =========================================
-echo   DESPLIEGUE COMPLETADO
+echo   Deployment Completed
 echo =========================================
 echo   Frontend:    http://localhost:5174
 echo   RabbitMQ:    http://localhost:15672

@@ -6,15 +6,7 @@ using AtlanticCity.Servicios.Identidad.Aplicacion.Dtos;
 
 namespace AtlanticCity.Services.Identity.Controllers
 {
-    /* 
-       =================================================================================
-       ATLANTIC CITY - AUTH CONTROLLER (PRESENTATION LAYER)
-       =================================================================================
-       Este controlador ahora sigue el patrón CLEAN ARCHITECTURE.
-       NO tiene lógica de negocio. NO tiene SQL. 
-       Solo delega la intención a MediatR (CQRS).
-       =================================================================================
-    */
+
     [Route("api/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
@@ -35,17 +27,16 @@ namespace AtlanticCity.Services.Identity.Controllers
                 var resultado = await _mediator.Send(new LoginCommand(request.Username, request.Password));
                 
                 if (resultado == null)
-                    return Unauthorized("Credenciales Incorrectas");
+                    return Unauthorized("Invalid credentials");
 
                 return Ok(resultado);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = ex.Message, Detail = ex.InnerException?.Message });
+                return StatusCode(500, new { Error = ex.Message });
             }
         }
 
-        // POST api/auth/register
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto request)
         {
@@ -56,22 +47,21 @@ namespace AtlanticCity.Services.Identity.Controllers
                 if (!resultado.Exito)
                     return BadRequest(new { Error = resultado.Error });
 
-                return Ok("Usuario registrado exitosamente");
+                return Ok("User registered successfully");
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = ex.Message, Detail = ex.InnerException?.Message });
+                return StatusCode(500, new { Error = ex.Message });
             }
         }
 
-        // POST api/auth/refresh
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequestDto request)
         {
             var resultado = await _mediator.Send(new RefreshTokenCommand(request.AccessToken, request.RefreshToken));
             
             if (resultado == null)
-                return BadRequest("Token de refresco inválido o expirado");
+                return BadRequest("Invalid or expired refresh token");
 
             return Ok(resultado);
         }

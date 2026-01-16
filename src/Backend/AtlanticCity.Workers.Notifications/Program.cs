@@ -19,61 +19,53 @@ namespace AtlanticCity.Workers.Notifications
     {
         static async Task Main(string[] args)
         {
-            // 0. Cargar Configuración
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddEnvironmentVariables() // Permite que Docker sobreescriba la configuración
+                .AddEnvironmentVariables()
                 .Build();
 
-            // 1. Configuración del contenedor de Inyección de Dependencias
             var connectionString = configuration.GetConnectionString("DefaultConnection")!;
-            var proveedorServicios = new ServiceCollection()
+            var services = new ServiceCollection()
                 .AddSingleton<IConfiguration>(configuration)
                 .AddLogging(constructor => constructor.AddConsole())
                 .AddDbContext<NotificacionesDbContext>(opciones => 
                     opciones.UseSqlServer(connectionString))
                 .AddSingleton<IServicioMensajeria, ServicioRabbitMQ>() 
                 .AddSingleton<IServicioCorreo, ServicioCorreoMailKit>() 
-                .AddScoped<IRepositorioNotificacion, RepositorioNotificacion>() // Nuevo Repositorio
+                .AddScoped<IRepositorioNotificacion, RepositorioNotificacion>()
                 .BuildServiceProvider();
 
-            var log = proveedorServicios.GetRequiredService<ILogger<Program>>();
-            var servicioMensajeria = proveedorServicios.GetRequiredService<IServicioMensajeria>();
-            var servicioCorreo = proveedorServicios.GetRequiredService<IServicioCorreo>();
+            var log = services.GetRequiredService<ILogger<Program>>();
+            var messaging = services.GetRequiredService<IServicioMensajeria>();
+            var emailService = services.GetRequiredService<IServicioCorreo>();
 
-            log.LogInformation("[NOTIFICADOR] Iniciado y esperando confirmaciones...");
+            log.LogInformation("Notifications Service started.");
 
-            // Se suscribe a la cola de "notificaciones" enviada por el BulkLoad Worker
-            await servicioMensajeria.SuscribirseAsync<MensajeProcesamientoArchivo>("cola_notificaciones", async (mensaje) =>
+            await messaging.SuscribirseAsync<MensajeProcesamientoArchivo>("cola_notificaciones", async (mensaje) =>
             {
-                // Crear un scope para los servicios Scoped (Repositorio)
-                using var scope = proveedorServicios.CreateScope();
+                using var scope = services.CreateScope();
                 var repo = scope.ServiceProvider.GetRequiredService<IRepositorioNotificacion>();
 
                 try
                 {
-                    log.LogInformation($"[CIERRE] Procesando lote: {mensaje.IdMensaje}");
+                    log.LogInformation($"Processing completion for: {mensaje.IdMensaje}");
 
-                    // 1. Persistencia y Auditoría (Todo encapsulado en Infraestructura)
                     await repo.FinalizarNotificacionAsync(mensaje.IdMensaje, mensaje.CorreoUsuario, mensaje.NombreArchivo);
 
-                    // 2. Notificación (Desacoplada)
-                    string cuerpo = $"El archivo '{mensaje.NombreArchivo}' se procesó exitosamente.";
-                    await servicioCorreo.EnviarCorreoAsync(mensaje.CorreoUsuario, "Carga masiva completada", cuerpo);
+                    string body = $"The file '{mensaje.NombreArchivo}' has been processed successfully.";
+                    await emailService.EnviarCorreoAsync(mensaje.CorreoUsuario, "Bulk Load Completed", body);
 
-                    log.LogInformation($"[EXITO] Lote {mensaje.IdMensaje} finalizado y correo enviado.");
+                    log.LogInformation($"Batch {mensaje.IdMensaje} finalized and email sent.");
                     
-                    // 3. Notificar al Gateway/SignalR
-                    await servicioMensajeria.PublicarMensajeAsync("cola_signalr", mensaje);
+                    await messaging.PublicarMensajeAsync("cola_signalr", mensaje);
                 }
                 catch (Exception ex)
                 {
-                    log.LogError($"[ERROR] Fallo en la fase de notificación: {ex.Message}");
+                    log.LogError($"Notification phase failed: {ex.Message}");
                 }
             });
 
-            // Mantiene el proceso vivo escuchandoRabbitMQ
             while (true) { await Task.Delay(1000); }
         }
     }

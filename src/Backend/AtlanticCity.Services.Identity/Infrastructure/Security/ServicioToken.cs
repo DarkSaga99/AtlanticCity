@@ -10,7 +10,6 @@ using AtlanticCity.Servicios.Identidad.Aplicacion.Interfaces;
 
 namespace AtlanticCity.Servicios.Identidad.Infraestructura.Seguridad
 {
-    // IMPLEMENTACIÓN: Lógica criptográfica para manejo de identidad.
     public class ServicioToken : IServicioToken
     {
         private readonly IConfiguration _configuracion;
@@ -29,7 +28,7 @@ namespace AtlanticCity.Servicios.Identidad.Infraestructura.Seguridad
                 issuer: _configuracion["Jwt:Issuer"],
                 audience: _configuracion["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(15),
+                expires: DateTime.Now.AddMinutes(15),
                 signingCredentials: credenciales
             );
 
@@ -38,15 +37,15 @@ namespace AtlanticCity.Servicios.Identidad.Infraestructura.Seguridad
 
         public string GenerarTokenRefresco()
         {
-            var numerosAleatorios = new byte[32];
-            using var generador = RandomNumberGenerator.Create();
-            generador.GetBytes(numerosAleatorios);
-            return Convert.ToBase64String(numerosAleatorios);
+            var randomNumber = new byte[32];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
         }
 
         public ClaimsPrincipal ObtenerPrincipalDeTokenExpirado(string token)
         {
-            var parametrosValidacion = new TokenValidationParameters
+            var tokenValidationParameters = new TokenValidationParameters
             {
                 ValidateAudience = false,
                 ValidateIssuer = false,
@@ -55,12 +54,12 @@ namespace AtlanticCity.Servicios.Identidad.Infraestructura.Seguridad
                 ValidateLifetime = false 
             };
 
-            var manejadorTokens = new JwtSecurityTokenHandler();
-            var principal = manejadorTokens.ValidateToken(token, parametrosValidacion, out SecurityToken tokenSeguridad);
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
 
-            if (tokenSeguridad is not JwtSecurityToken jwtToken ||
-                !jwtToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
-                throw new SecurityTokenException("El token no tiene un formato válido");
+            if (securityToken is not JwtSecurityToken jwtSecurityToken ||
+                !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                throw new SecurityTokenException("Invalid token format");
 
             return principal;
         }

@@ -30,16 +30,16 @@ namespace AtlanticCity.Compartido.Mensajeria
             {
                 try
                 {
-                    _log.LogInformation($"[RABBITMQ] Intento {intento}/{MaxReintentos} - Conectando a {_nombreServidor}...");
+                    _log.LogInformation($"[RabbitMQ] Connecting to {_nombreServidor} (Attempt {intento}/{MaxReintentos})...");
                     var conexion = fabrica.CreateConnection();
-                    _log.LogInformation($"[RABBITMQ] ¡Conexión exitosa a {_nombreServidor}!");
+                    _log.LogInformation($"[RabbitMQ] Connected to {_nombreServidor}");
                     return conexion;
                 }
                 catch (Exception ex)
                 {
                     ultimaExcepcion = ex;
-                    int tiempoEspera = EsperaBaseMs * intento; // Espera lineal: 2s, 4s, 6s, etc.
-                    _log.LogWarning($"[RABBITMQ] Intento {intento} fallido: {ex.Message}. Reintentando en {tiempoEspera/1000} segundos...");
+                    int tiempoEspera = EsperaBaseMs * intento;
+                    _log.LogWarning($"[RabbitMQ] Failed (Attempt {intento}): {ex.Message}. Retrying in {tiempoEspera/1000}s...");
                     Thread.Sleep(tiempoEspera);
                 }
             }
@@ -68,7 +68,7 @@ namespace AtlanticCity.Compartido.Mensajeria
             propiedades.Persistent = true;
 
             canal.BasicPublish(exchange: "", routingKey: nombreCola, basicProperties: propiedades, body: cuerpo);
-            _log.LogInformation($"[MENSAJERÍA] Mensaje enviado a la cola: {nombreCola}");
+            _log.LogInformation($"[Messaging] Published to: {nombreCola}");
 
             return Task.CompletedTask;
         }
@@ -95,8 +95,6 @@ namespace AtlanticCity.Compartido.Mensajeria
                 {
                     var cuerpo = ea.Body.ToArray();
                     var textoJson = Encoding.UTF8.GetString(cuerpo);
-                    Console.WriteLine($"[RABBITMQ DEBUG] Recibido en {nombreCola}: {textoJson}");
-
                     var objetoResultante = JsonConvert.DeserializeObject<T>(textoJson);
 
                     if (objetoResultante != null)
@@ -108,14 +106,13 @@ namespace AtlanticCity.Compartido.Mensajeria
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[RABBITMQ ERROR] {ex.Message}");
-                    _log.LogError($"[RABBITMQ ERROR] {ex.Message}");
+                    _log.LogError($"[RabbitMQ Error] {ex.Message}");
                     canal.BasicNack(deliveryTag: ea.DeliveryTag, multiple: false, requeue: true);
                 }
             };
 
             canal.BasicConsume(queue: nombreCola, autoAck: false, consumer: consumidor);
-            _log.LogInformation($"[RABBITMQ] Escuchando en cola: {nombreCola}");
+            _log.LogInformation($"[RabbitMQ] Subscribed to: {nombreCola}");
 
             return Task.CompletedTask;
         }

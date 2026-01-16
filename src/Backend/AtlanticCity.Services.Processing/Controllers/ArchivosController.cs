@@ -8,21 +8,19 @@ using System;
 
 namespace AtlanticCity.Servicios.Procesamiento.Presentacion.Controladores
 {
-    // CONTROLADOR: Ahora solo actúa como punto de entrada (Capa de Presentación)
     [Route("api/[controller]")]
     [ApiController]
     public class ArchivosController : ControllerBase
     {
-        private readonly IMediator _mediator; // Mediador inyectado para CQRS
-        private readonly IConfiguration _config; // Inyectado para configuración dinámica
+        private readonly IMediator _mediator;
+        private readonly IConfiguration _config;
 
         public ArchivosController(IMediator mediator, IConfiguration config)
         {
-            _mediator = mediator; // Delegamos la ejecución a los Handlers correspondientes
+            _mediator = mediator;
             _config = config;
         }
 
-        // QUERY: Obtener seguimiento (Lectura de Productos)
         [HttpGet("seguimiento")]
         public async Task<IActionResult> GetSeguimiento()
         {
@@ -30,7 +28,6 @@ namespace AtlanticCity.Servicios.Procesamiento.Presentacion.Controladores
             return Ok(resultado);
         }
 
-        // QUERY: Obtener Historial de Lotes
         [HttpGet("historial")]
         public async Task<IActionResult> GetHistorial()
         {
@@ -38,7 +35,6 @@ namespace AtlanticCity.Servicios.Procesamiento.Presentacion.Controladores
             return Ok(resultado);
         }
 
-        // QUERY: Obtener Log de Alertas
         [HttpGet("alertas")]
         public async Task<IActionResult> GetAlertas()
         {
@@ -46,7 +42,6 @@ namespace AtlanticCity.Servicios.Procesamiento.Presentacion.Controladores
             return Ok(resultado);
         }
 
-        // QUERY: Obtener productos de un lote específico
         [HttpGet("{id}/productos")]
         public async Task<IActionResult> GetProductosLote(Guid id)
         {
@@ -54,7 +49,6 @@ namespace AtlanticCity.Servicios.Procesamiento.Presentacion.Controladores
             return Ok(resultado);
         }
 
-        // COMMAND: Subir archivo (Escritura/Procesamiento)
         [HttpPost("subir")]
         [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("limite_subida")]
         public async Task<IActionResult> Subir(IFormFile archivo, [FromQuery] string correoUsuario)
@@ -68,9 +62,9 @@ namespace AtlanticCity.Servicios.Procesamiento.Presentacion.Controladores
             try 
             {
                 var loteId = await _mediator.Send(comando);
-                return Ok(new { LoteId = loteId, Status = "PENDIENTE" }); // Estado inicial
+                return Ok(new { LoteId = loteId, Status = "PENDIENTE" });
             }
-            catch (ArgumentException ex) // Capturar errores de validación del handler
+            catch (ArgumentException ex)
             {
                 return BadRequest(new { Error = ex.Message });
             }

@@ -6,7 +6,6 @@ using AtlanticCity.Servicios.Identidad.Core.Interfaces;
 
 namespace AtlanticCity.Servicios.Identidad.Infraestructura.Persistencia
 {
-    // IMPLEMENTACIÓN: EF Core para código limpio y LINQ, manteniendo resiliencia.
     public class RepositorioUsuario : IUsuarioRepositorio
     {
         private readonly ContextoBaseDatos _context;
@@ -18,7 +17,7 @@ namespace AtlanticCity.Servicios.Identidad.Infraestructura.Persistencia
         {
             _context = context;
             _log = log;
-            // Políticas de Resiliencia
+            
             _retryPolicy = AtlanticCity.Compartido.Resiliencia.PoliticasResiliencia.ObtenerPoliticaReintento(log);
             _circuitBreaker = AtlanticCity.Compartido.Resiliencia.PoliticasResiliencia.ObtenerPoliticaCortaFuegos(log);
         }
@@ -35,7 +34,7 @@ namespace AtlanticCity.Servicios.Identidad.Infraestructura.Persistencia
             }
             catch (Polly.CircuitBreaker.BrokenCircuitException)
             {
-                _log.LogCritical("CIRCUITO BLOQUEADO: EF Core no intentará conectar por seguridad.");
+                _log.LogCritical("Circuit Breaker is open: database connection temporarily disabled.");
                 throw;
             }
         }
@@ -54,7 +53,7 @@ namespace AtlanticCity.Servicios.Identidad.Infraestructura.Persistencia
             }
             catch (DbUpdateException ex)
             {
-                _log.LogError($"Error EF al Registrar: {ex.Message}");
+                _log.LogError($"EF Registry Error: {ex.Message}");
                 throw;
             }
         }

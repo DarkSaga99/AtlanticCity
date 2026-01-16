@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # 1. Base de Datos (SQL Server)
+  # Database (SQL Server)
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: ac-sqlserver
@@ -13,7 +13,7 @@ services:
     volumes:
       - sql_data:/var/opt/mssql
 
-  # 2. Mensajería (RabbitMQ)
+  # Messaging (RabbitMQ)
   rabbitmq:
     image: rabbitmq:3-management
     container_name: ac-rabbitmq
@@ -24,7 +24,7 @@ services:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
 
-  # 3. Almacenamiento (SeaweedFS)
+  # Storage (SeaweedFS)
   seaweedfs:
     image: chrislusf/seaweedfs
     container_name: ac-seaweedfs
@@ -34,7 +34,7 @@ services:
       - "8080:8080"
     command: "server -s3"
 
-  # 4. Gateway (API Principal)
+  # API Gateway
   gateway:
     build:
       context: .
@@ -55,7 +55,7 @@ services:
       - sqlserver
       - rabbitmq
 
-  # 5. Servicio Identity (Auth)
+  # Identity Service
   identity:
     build:
       context: .
@@ -68,7 +68,7 @@ services:
     depends_on:
       - sqlserver
 
-  # 6. Servicio Procesamiento (Lógica de Negocio)
+  # Processing Service
   processing:
     build:
       context: .
@@ -86,7 +86,7 @@ services:
       - rabbitmq
       - seaweedfs
 
-  # 7. Worker Carga Masiva (Procesamiento CSV)
+  # BulkLoad Worker
   worker-bulkload:
     build:
       context: .
@@ -98,7 +98,7 @@ services:
     depends_on:
       - rabbitmq
 
-  # 8. Worker Notificaciones (Email)
+  # Notifications Worker
   worker-notifications:
     build:
       context: .
@@ -110,7 +110,7 @@ services:
     depends_on:
       - rabbitmq
 
-  # 9. Frontend (React)
+  # Frontend (React)
   frontend:
     build:
       context: src/Frontend/atlantic-city-client
